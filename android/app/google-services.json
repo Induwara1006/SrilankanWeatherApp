@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "18369224300",
+    "project_id": "srilankaapp-4abc5",
+    "storage_bucket": "srilankaapp-4abc5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18369224300:android:3d6c5acb85258452db0249",
+        "android_client_info": {
+          "package_name": "com.srilanka.sri_lanka_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARUm2enn9NeALrd5Eac70NoSForeTJrJY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
