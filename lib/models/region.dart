@@ -1,6 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
-enum WeatherStatus { sunny, rainy, cloudy }
+enum WeatherStatus { sunny, rainy, cloudy, stormy, flood }
 
 WeatherStatus statusFromString(String s) {
   switch (s) {
@@ -10,6 +10,10 @@ WeatherStatus statusFromString(String s) {
       return WeatherStatus.rainy;
     case 'cloudy':
       return WeatherStatus.cloudy;
+    case 'stormy':
+      return WeatherStatus.stormy;
+    case 'flood':
+      return WeatherStatus.flood;
     default:
       return WeatherStatus.sunny;
   }
@@ -44,9 +48,11 @@ class Region {
         (data['lat'] as num).toDouble(),
         (data['lng'] as num).toDouble(),
       ),
-      status: statusFromString(data['status'] as String),
-      updatedAt: (data['updatedAt'] as dynamic).toDate(),
-      updatedBy: data['updatedBy'] as String,
+      status: statusFromString(data['status'] as String? ?? 'sunny'),
+      updatedAt: data['updatedAt'] != null 
+          ? (data['updatedAt'] as dynamic).toDate() 
+          : DateTime.now(),
+      updatedBy: data['updatedBy'] as String? ?? 'unknown',
     );
   }
 
