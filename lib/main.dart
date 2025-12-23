@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -167,40 +168,73 @@ class SriLankaWeatherPage extends StatefulWidget {
   State<SriLankaWeatherPage> createState() => _SriLankaWeatherPageState();
 }
 
-class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> {
+class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with AutomaticKeepAliveClientMixin {
   final MapController _mapController = MapController();
   final WeatherRepository _repository = WeatherRepository();
   static const LatLng _sriLankaCenter = LatLng(7.8731, 80.7718);
   bool _isUpdating = false;
   bool _showLegend = true;
-
-  IconData _getWeatherIcon(WeatherStatus status) {
-    switch (status) {
-      case WeatherStatus.sunny:
-        return Icons.wb_sunny;
-      case WeatherStatus.rainy:
-        return Icons.water_drop;
-      case WeatherStatus.cloudy:
-        return Icons.cloud;
-      case WeatherStatus.stormy:
-        return Icons.thunderstorm;
-      case WeatherStatus.flood:
-        return Icons.flood;
-    }
+  bool _isInteracting = false;
+  
+  // Cache for markers
+  List<Marker>? _cachedMarkers;
+  List<Marker>? _cachedSimpleMarkers;
+  List<Region>? _cachedRegions;
+  
+  // Debounce timer
+  Timer? _interactionDebounce;
+  
+  @override
+  bool get wantKeepAlive => true;
+  
+  @override
+  void dispose() {
+    _interactionDebounce?.cancel();
+    super.dispose();
   }
 
-  Color _getWeatherColor(WeatherStatus status) {
-    switch (status) {
-      case WeatherStatus.sunny:
-        return Colors.orange;
-      case WeatherStatus.rainy:
-        return Colors.blue;
-      case WeatherStatus.cloudy:
-        return Colors.grey;
-      case WeatherStatus.stormy:
-        return Colors.purple;
-      case WeatherStatus.flood:
-        return Colors.red;
+  // Static cache for weather attributes to prevent repeated allocations
+  static const Map<WeatherStatus, IconData> _weatherIcons = {
+    WeatherStatus.sunny: Icons.wb_sunny,
+    WeatherStatus.rainy: Icons.water_drop,
+    WeatherStatus.cloudy: Icons.cloud,
+    WeatherStatus.stormy: Icons.thunderstorm,
+    WeatherStatus.flood: Icons.flood,
+  };
+  
+  static const Map<WeatherStatus, Color> _weatherColors = {
+    WeatherStatus.sunny: Colors.orange,
+    WeatherStatus.rainy: Colors.blue,
+    WeatherStatus.cloudy: Colors.grey,
+    WeatherStatus.stormy: Colors.purple,
+    WeatherStatus.flood: Colors.red,
+  };
+  
+  static const Map<WeatherStatus, String> _weatherLabels = {
+    WeatherStatus.sunny: 'Sunny',
+    WeatherStatus.rainy: 'Rainy',
+    WeatherStatus.cloudy: 'Cloudy',
+    WeatherStatus.stormy: 'Stormy',
+    WeatherStatus.flood: 'Flood',
+  };
+
+  IconData _getWeatherIcon(WeatherStatus status) => _weatherIcons[status]!;
+  Color _getWeatherColor(WeatherStatus status) => _weatherColors[status]!;
+  String _getWeatherLabel(WeatherStatus status) => _weatherLabels[status]!;
+  
+  void _setInteracting(bool value) {
+    _interactionDebounce?.cancel();
+    
+    if (value) {
+      if (!_isInteracting) {
+        setState(() => _isInteracting = true);
+      }
+    } else {
+      _interactionDebounce = Timer(const Duration(milliseconds: 200), () {
+        if (mounted && _isInteracting) {
+          setState(() => _isInteracting = false);
+        }
+      });
     }
   }
 
@@ -395,6 +429,7 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sri Lanka Weather'),
@@ -465,7 +500,18 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> {
         ],
       ),
       body: StreamBuilder<List<Region>>(
-        stream: _repository.watchRegions(),
+        stream: _repository.watchRegions().distinct((prev, next) {
+          // Only rebuild if actual data changes
+          if (prev.length != next.length) return false;
+          for (int i = 0; i < prev.length; i++) {
+            if (prev[i].id != next[i].id || 
+                prev[i].status != next[i].status ||
+                prev[i].updatedAt != next[i].updatedAt) {
+              return false;
+            }
+          }
+          return true;
+        }),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -535,15 +581,39 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> {
                     initialZoom: 7.5,
                     minZoom: 6.0,
                     maxZoom: 18.0,
+                    keepAlive: true,
+                    onMapEvent: (event) {
+                      if (event is MapEventMoveStart || event is MapEventFlingAnimationStart) {
+                        _setInteracting(true);
+                      } else if (event is MapEventMoveEnd || event is MapEventFlingAnimationEnd) {
+                        _setInteracting(false);
+                      }
+                    },
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all,
+                      pinchZoomThreshold: 0.5,
+                      scrollWheelVelocity: 0.005,
+                      pinchMoveThreshold: 40.0,
+                    ),
                   ),
                   children: [
                     TileLayer(
                       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.srilanka.sri_lanka_app',
                       maxZoom: 19,
+                      maxNativeZoom: 19,
+                      panBuffer: 1,
+                      keepBuffer: 2,
+                      retinaMode: false,
+                      tileDisplay: _isInteracting 
+                        ? const TileDisplay.instantaneous()
+                        : const TileDisplay.fadeIn(
+                            duration: Duration(milliseconds: 80),
+                          ),
                     ),
                     MarkerLayer(
-                      markers: _buildMarkers(regions),
+                      markers: _buildMarkers(regions, simple: _isInteracting),
+                      rotate: false,
                     ),
                   ],
                 ),
@@ -551,27 +621,28 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> {
                   Positioned(
                     top: 16,
                     right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Legend',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                    child: RepaintBoundary(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x1A000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Legend',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
                           ),
