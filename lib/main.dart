@@ -12,29 +12,59 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void _toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sri Lanka Weather',
       debugShowCheckedModeBanner: false,
+      themeMode: _themeMode,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 2,
         ),
       ),
-      home: const AppInitializer(),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 2,
+        ),
+      ),
+      home: AppInitializer(onToggleTheme: _toggleTheme),
     );
   }
 }
 
 class AppInitializer extends StatefulWidget {
-  const AppInitializer({super.key});
+  final VoidCallback onToggleTheme;
+  
+  const AppInitializer({super.key, required this.onToggleTheme});
 
   @override
   State<AppInitializer> createState() => _AppInitializerState();
@@ -58,7 +88,7 @@ class _AppInitializerState extends State<AppInitializer> {
       
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const SriLankaWeatherPage()),
+          MaterialPageRoute(builder: (_) => SriLankaWeatherPage(onToggleTheme: widget.onToggleTheme)),
         );
       }
     } catch (e) {
@@ -129,7 +159,9 @@ class _AppInitializerState extends State<AppInitializer> {
 }
 
 class SriLankaWeatherPage extends StatefulWidget {
-  const SriLankaWeatherPage({super.key});
+  final VoidCallback onToggleTheme;
+  
+  const SriLankaWeatherPage({super.key, required this.onToggleTheme});
 
   @override
   State<SriLankaWeatherPage> createState() => _SriLankaWeatherPageState();
@@ -368,6 +400,15 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> {
         title: const Text('Sri Lanka Weather'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            icon: Icon(Theme.of(context).brightness == Brightness.dark 
+              ? Icons.light_mode 
+              : Icons.dark_mode),
+            onPressed: widget.onToggleTheme,
+            tooltip: Theme.of(context).brightness == Brightness.dark 
+              ? 'Light Mode' 
+              : 'Dark Mode',
+          ),
           IconButton(
             icon: Icon(_showLegend ? Icons.visibility_off : Icons.visibility),
             onPressed: () {
