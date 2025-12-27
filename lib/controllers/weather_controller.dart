@@ -15,6 +15,8 @@ class WeatherController extends ChangeNotifier {
   bool _showLegend = true;
   bool _isInteracting = false;
   Timer? _interactionDebounce;
+  DateTime? _lastTapTime;
+  LatLng? _lastTapPosition;
 
   bool get isUpdating => _isUpdating;
   bool get showLegend => _showLegend;
@@ -79,6 +81,28 @@ class WeatherController extends ChangeNotifier {
 
   void resetMapView() {
     mapController.move(sriLankaCenter, 7.5);
+  }
+
+  bool handleTapForDoubleClick(LatLng position) {
+    final now = DateTime.now();
+    final isDoubleTap = _lastTapTime != null &&
+        now.difference(_lastTapTime!).inMilliseconds < 300 &&
+        _lastTapPosition != null &&
+        ((_lastTapPosition!.latitude - position.latitude).abs() < 0.01 &&
+            (_lastTapPosition!.longitude - position.longitude).abs() < 0.01);
+
+    _lastTapTime = now;
+    _lastTapPosition = position;
+
+    if (isDoubleTap) {
+      // Zoom in on double tap
+      final currentZoom = mapController.camera.zoom;
+      if (currentZoom < 18.0) {
+        mapController.move(position, currentZoom + 1);
+      }
+      return true;
+    }
+    return false;
   }
 
   Future<void> updateRegionStatus(

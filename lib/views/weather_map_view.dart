@@ -204,6 +204,10 @@ class _WeatherMapViewState extends State<WeatherMapView>
                       minZoom: 6.0,
                       maxZoom: 18.0,
                       keepAlive: true,
+                      onTap: (tapPosition, point) {
+                        // Double-tap to zoom in
+                        _controller.handleTapForDoubleClick(point);
+                      },
                       onMapEvent: (event) {
                         if (event is MapEventMoveStart ||
                             event is MapEventFlingAnimationStart) {
