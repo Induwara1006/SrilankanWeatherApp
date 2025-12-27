@@ -25,7 +25,9 @@ class _MyAppState extends State<MyApp> {
 
   void _toggleTheme() {
     setState(() {
-      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode = _themeMode == ThemeMode.light
+          ? ThemeMode.dark
+          : ThemeMode.light;
     });
   }
 
@@ -41,10 +43,7 @@ class _MyAppState extends State<MyApp> {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 2,
-        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -52,10 +51,7 @@ class _MyAppState extends State<MyApp> {
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 2,
-        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
       ),
       home: AppInitializer(onToggleTheme: _toggleTheme),
     );
@@ -64,7 +60,7 @@ class _MyAppState extends State<MyApp> {
 
 class AppInitializer extends StatefulWidget {
   final VoidCallback onToggleTheme;
-  
+
   const AppInitializer({super.key, required this.onToggleTheme});
 
   @override
@@ -86,10 +82,13 @@ class _AppInitializerState extends State<AppInitializer> {
         options: DefaultFirebaseOptions.currentPlatform,
       );
       await FirebaseAuth.instance.signInAnonymously();
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => SriLankaWeatherPage(onToggleTheme: widget.onToggleTheme)),
+          MaterialPageRoute(
+            builder: (_) =>
+                SriLankaWeatherPage(onToggleTheme: widget.onToggleTheme),
+          ),
         );
       }
     } catch (e) {
@@ -161,32 +160,28 @@ class _AppInitializerState extends State<AppInitializer> {
 
 class SriLankaWeatherPage extends StatefulWidget {
   final VoidCallback onToggleTheme;
-  
+
   const SriLankaWeatherPage({super.key, required this.onToggleTheme});
 
   @override
   State<SriLankaWeatherPage> createState() => _SriLankaWeatherPageState();
 }
 
-class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with AutomaticKeepAliveClientMixin {
+class _SriLankaWeatherPageState extends State<SriLankaWeatherPage>
+    with AutomaticKeepAliveClientMixin {
   final MapController _mapController = MapController();
   final WeatherRepository _repository = WeatherRepository();
   static const LatLng _sriLankaCenter = LatLng(7.8731, 80.7718);
   bool _isUpdating = false;
   bool _showLegend = true;
   bool _isInteracting = false;
-  
-  // Cache for markers
-  List<Marker>? _cachedMarkers;
-  List<Marker>? _cachedSimpleMarkers;
-  List<Region>? _cachedRegions;
-  
+
   // Debounce timer
   Timer? _interactionDebounce;
-  
+
   @override
   bool get wantKeepAlive => true;
-  
+
   @override
   void dispose() {
     _interactionDebounce?.cancel();
@@ -201,7 +196,7 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
     WeatherStatus.stormy: Icons.thunderstorm,
     WeatherStatus.flood: Icons.flood,
   };
-  
+
   static const Map<WeatherStatus, Color> _weatherColors = {
     WeatherStatus.sunny: Colors.orange,
     WeatherStatus.rainy: Colors.blue,
@@ -209,22 +204,13 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
     WeatherStatus.stormy: Colors.purple,
     WeatherStatus.flood: Colors.red,
   };
-  
-  static const Map<WeatherStatus, String> _weatherLabels = {
-    WeatherStatus.sunny: 'Sunny',
-    WeatherStatus.rainy: 'Rainy',
-    WeatherStatus.cloudy: 'Cloudy',
-    WeatherStatus.stormy: 'Stormy',
-    WeatherStatus.flood: 'Flood',
-  };
 
   IconData _getWeatherIcon(WeatherStatus status) => _weatherIcons[status]!;
   Color _getWeatherColor(WeatherStatus status) => _weatherColors[status]!;
-  String _getWeatherLabel(WeatherStatus status) => _weatherLabels[status]!;
-  
+
   void _setInteracting(bool value) {
     _interactionDebounce?.cancel();
-    
+
     if (value) {
       if (!_isInteracting) {
         setState(() => _isInteracting = true);
@@ -241,7 +227,7 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
   String _formatTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inMinutes < 1) {
       return 'Just now';
     } else if (difference.inMinutes < 60) {
@@ -276,16 +262,16 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
             ),
             Text(
               region.name,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Last updated: ${_formatTimeAgo(region.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -298,11 +284,41 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
               runSpacing: 12,
               alignment: WrapAlignment.center,
               children: [
-                _buildWeatherChip(region, WeatherStatus.sunny, 'Sunny', Icons.wb_sunny, Colors.orange),
-                _buildWeatherChip(region, WeatherStatus.rainy, 'Rainy', Icons.water_drop, Colors.blue),
-                _buildWeatherChip(region, WeatherStatus.cloudy, 'Cloudy', Icons.cloud, Colors.grey),
-                _buildWeatherChip(region, WeatherStatus.stormy, 'Stormy', Icons.thunderstorm, Colors.purple),
-                _buildWeatherChip(region, WeatherStatus.flood, 'Flood', Icons.flood, Colors.red),
+                _buildWeatherChip(
+                  region,
+                  WeatherStatus.sunny,
+                  'Sunny',
+                  Icons.wb_sunny,
+                  Colors.orange,
+                ),
+                _buildWeatherChip(
+                  region,
+                  WeatherStatus.rainy,
+                  'Rainy',
+                  Icons.water_drop,
+                  Colors.blue,
+                ),
+                _buildWeatherChip(
+                  region,
+                  WeatherStatus.cloudy,
+                  'Cloudy',
+                  Icons.cloud,
+                  Colors.grey,
+                ),
+                _buildWeatherChip(
+                  region,
+                  WeatherStatus.stormy,
+                  'Stormy',
+                  Icons.thunderstorm,
+                  Colors.purple,
+                ),
+                _buildWeatherChip(
+                  region,
+                  WeatherStatus.flood,
+                  'Flood',
+                  Icons.flood,
+                  Colors.red,
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -312,7 +328,13 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
     );
   }
 
-  Widget _buildWeatherChip(Region region, WeatherStatus status, String label, IconData icon, Color color) {
+  Widget _buildWeatherChip(
+    Region region,
+    WeatherStatus status,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     final isSelected = region.status == status;
     return FilterChip(
       selected: isSelected,
@@ -357,9 +379,7 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
       },
       selectedColor: color,
       checkmarkColor: Colors.white,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.black87,
-      ),
+      labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
     );
   }
 
@@ -436,13 +456,15 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
-            icon: Icon(Theme.of(context).brightness == Brightness.dark 
-              ? Icons.light_mode 
-              : Icons.dark_mode),
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
             onPressed: widget.onToggleTheme,
-            tooltip: Theme.of(context).brightness == Brightness.dark 
-              ? 'Light Mode' 
-              : 'Dark Mode',
+            tooltip: Theme.of(context).brightness == Brightness.dark
+                ? 'Light Mode'
+                : 'Dark Mode',
           ),
           IconButton(
             icon: Icon(_showLegend ? Icons.visibility_off : Icons.visibility),
@@ -504,7 +526,7 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
           // Only rebuild if actual data changes
           if (prev.length != next.length) return false;
           for (int i = 0; i < prev.length; i++) {
-            if (prev[i].id != next[i].id || 
+            if (prev[i].id != next[i].id ||
                 prev[i].status != next[i].status ||
                 prev[i].updatedAt != next[i].updatedAt) {
               return false;
@@ -549,14 +571,12 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
                       try {
                         await _repository.seedRegionsIfEmpty();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Regions initialized!'),
-                          ),
+                          const SnackBar(content: Text('Regions initialized!')),
                         );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('Error: $e')));
                       }
                     },
                     icon: const Icon(Icons.download),
@@ -583,9 +603,11 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
                     maxZoom: 18.0,
                     keepAlive: true,
                     onMapEvent: (event) {
-                      if (event is MapEventMoveStart || event is MapEventFlingAnimationStart) {
+                      if (event is MapEventMoveStart ||
+                          event is MapEventFlingAnimationStart) {
                         _setInteracting(true);
-                      } else if (event is MapEventMoveEnd || event is MapEventFlingAnimationEnd) {
+                      } else if (event is MapEventMoveEnd ||
+                          event is MapEventFlingAnimationEnd) {
                         _setInteracting(false);
                       }
                     },
@@ -598,23 +620,21 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.srilanka.sri_lanka_app',
                       maxZoom: 19,
                       maxNativeZoom: 19,
                       panBuffer: 1,
                       keepBuffer: 2,
                       retinaMode: false,
-                      tileDisplay: _isInteracting 
-                        ? const TileDisplay.instantaneous()
-                        : const TileDisplay.fadeIn(
-                            duration: Duration(milliseconds: 80),
-                          ),
+                      tileDisplay: _isInteracting
+                          ? const TileDisplay.instantaneous()
+                          : const TileDisplay.fadeIn(
+                              duration: Duration(milliseconds: 80),
+                            ),
                     ),
-                    MarkerLayer(
-                      markers: _buildMarkers(regions, simple: _isInteracting),
-                      rotate: false,
-                    ),
+                    MarkerLayer(markers: _buildMarkers(regions), rotate: false),
                   ],
                 ),
                 if (_showLegend)
@@ -643,25 +663,40 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
                               'Legend',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildLegendItem(Icons.wb_sunny, 'Sunny', Colors.orange),
-                          _buildLegendItem(Icons.water_drop, 'Rainy', Colors.blue),
-                          _buildLegendItem(Icons.cloud, 'Cloudy', Colors.grey),
-                          _buildLegendItem(Icons.thunderstorm, 'Stormy', Colors.purple),
-                          _buildLegendItem(Icons.flood, 'Flood', Colors.red),
-                        ],
+                            const SizedBox(height: 8),
+                            _buildLegendItem(
+                              Icons.wb_sunny,
+                              'Sunny',
+                              Colors.orange,
+                            ),
+                            _buildLegendItem(
+                              Icons.water_drop,
+                              'Rainy',
+                              Colors.blue,
+                            ),
+                            _buildLegendItem(
+                              Icons.cloud,
+                              'Cloudy',
+                              Colors.grey,
+                            ),
+                            _buildLegendItem(
+                              Icons.thunderstorm,
+                              'Stormy',
+                              Colors.purple,
+                            ),
+                            _buildLegendItem(Icons.flood, 'Flood', Colors.red),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 if (_isUpdating)
                   Container(
                     color: Colors.black26,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: const Center(child: CircularProgressIndicator()),
                   ),
               ],
             ),
@@ -679,10 +714,7 @@ class _SriLankaWeatherPageState extends State<SriLankaWeatherPage> with Automati
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11),
-          ),
+          Text(label, style: const TextStyle(fontSize: 11)),
         ],
       ),
     );
