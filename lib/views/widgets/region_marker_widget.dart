@@ -16,28 +16,30 @@ class RegionMarkerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final weatherColor = controller.getWeatherColor(region.status);
+    final weatherIcon = controller.getWeatherIcon(region.status);
+    
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: controller.getWeatherColor(region.status),
+              color: weatherColor,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: controller
-                      .getWeatherColor(region.status)
-                      .withOpacity(0.5),
+                  color: weatherColor.withOpacity(0.5),
                   blurRadius: 8,
                   spreadRadius: 2,
                 ),
               ],
             ),
             child: Icon(
-              controller.getWeatherIcon(region.status),
+              weatherIcon,
               color: Colors.white,
               size: 24,
             ),
@@ -49,11 +51,11 @@ class RegionMarkerWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(6),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Color(0x26000000),
                   blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  offset: Offset(0, 2),
                 ),
               ],
             ),

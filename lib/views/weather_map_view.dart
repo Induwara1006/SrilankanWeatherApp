@@ -88,13 +88,16 @@ class _WeatherMapViewState extends State<WeatherMapView>
   List<Marker> _buildMarkers(List<Region> regions) {
     return regions.map((region) {
       return Marker(
+        key: ValueKey(region.id),
         point: region.position,
         width: 110,
         height: 110,
-        child: RegionMarkerWidget(
-          region: region,
-          controller: _controller,
-          onTap: () => _showUpdateDialog(region),
+        child: RepaintBoundary(
+          child: RegionMarkerWidget(
+            region: region,
+            controller: _controller,
+            onTap: () => _showUpdateDialog(region),
+          ),
         ),
       );
     }).toList();
@@ -192,48 +195,56 @@ class _WeatherMapViewState extends State<WeatherMapView>
             },
             child: Stack(
               children: [
-                FlutterMap(
-                  mapController: _controller.mapController,
-                  options: MapOptions(
-                    initialCenter: WeatherController.sriLankaCenter,
-                    initialZoom: 7.5,
-                    minZoom: 6.0,
-                    maxZoom: 18.0,
-                    keepAlive: true,
-                    onMapEvent: (event) {
-                      if (event is MapEventMoveStart ||
-                          event is MapEventFlingAnimationStart) {
-                        _controller.setInteracting(true);
-                      } else if (event is MapEventMoveEnd ||
-                          event is MapEventFlingAnimationEnd) {
-                        _controller.setInteracting(false);
-                      }
-                    },
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.all,
-                      pinchZoomThreshold: 0.5,
-                      scrollWheelVelocity: 0.005,
-                      pinchMoveThreshold: 40.0,
+                RepaintBoundary(
+                  child: FlutterMap(
+                    mapController: _controller.mapController,
+                    options: MapOptions(
+                      initialCenter: WeatherController.sriLankaCenter,
+                      initialZoom: 7.5,
+                      minZoom: 6.0,
+                      maxZoom: 18.0,
+                      keepAlive: true,
+                      onMapEvent: (event) {
+                        if (event is MapEventMoveStart ||
+                            event is MapEventFlingAnimationStart) {
+                          _controller.setInteracting(true);
+                        } else if (event is MapEventMoveEnd ||
+                            event is MapEventFlingAnimationEnd) {
+                          _controller.setInteracting(false);
+                        }
+                      },
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.all,
+                        pinchZoomThreshold: 0.5,
+                        scrollWheelVelocity: 0.005,
+                        pinchMoveThreshold: 40.0,
+                      ),
                     ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.srilanka.sri_lanka_app',
+                        maxZoom: 19,
+                        maxNativeZoom: 19,
+                        panBuffer: 0,
+                        keepBuffer: 3,
+                        retinaMode: false,
+                        tileDisplay: _controller.isInteracting
+                            ? const TileDisplay.instantaneous()
+                            : const TileDisplay.fadeIn(
+                                duration: Duration(milliseconds: 100),
+                              ),
+                        tileBuilder: (context, widget, tile) {
+                          return RepaintBoundary(child: widget);
+                        },
+                      ),
+                      MarkerLayer(
+                        markers: _buildMarkers(regions),
+                        rotate: false,
+                      ),
+                    ],
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.srilanka.sri_lanka_app',
-                      maxZoom: 19,
-                      maxNativeZoom: 19,
-                      panBuffer: 1,
-                      keepBuffer: 2,
-                      retinaMode: false,
-                      tileDisplay: _controller.isInteracting
-                          ? const TileDisplay.instantaneous()
-                          : const TileDisplay.fadeIn(
-                              duration: Duration(milliseconds: 80),
-                            ),
-                    ),
-                    MarkerLayer(markers: _buildMarkers(regions), rotate: false),
-                  ],
                 ),
                 ListenableBuilder(
                   listenable: _controller,

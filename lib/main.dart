@@ -1,10 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'views/weather_map_view.dart';
 
 void main() {
+  // Performance optimizations
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Enable high refresh rate on supported devices
+  SchedulerBinding.instance.addPostFrameCallback((_) {
+    SchedulerBinding.instance.platformDispatcher.scheduleFrame();
+  });
+  
+  // Set preferred orientations and system UI
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+  
   runApp(const MyApp());
 }
 
