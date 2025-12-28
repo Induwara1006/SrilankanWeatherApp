@@ -46,7 +46,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sri Lanka Weather',
+      title: 'Serendip',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       theme: ThemeData(

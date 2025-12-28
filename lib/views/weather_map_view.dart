@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../controllers/weather_controller.dart';
 import '../models/region.dart';
+import '../models/user_marker.dart';
+import '../services/user_marker_repository.dart';
 import 'widgets/legend_widget.dart';
 import 'widgets/region_marker_widget.dart';
 import 'widgets/weather_update_dialog.dart';
+import 'widgets/add_marker_dialog.dart';
+import 'widgets/user_marker_widget.dart';
+import 'widgets/marker_detail_dialog.dart';
 
 class WeatherMapView extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -18,6 +24,8 @@ class WeatherMapView extends StatefulWidget {
 class _WeatherMapViewState extends State<WeatherMapView>
     with AutomaticKeepAliveClientMixin {
   late final WeatherController _controller;
+  final UserMarkerRepository _markerRepository = UserMarkerRepository();
+  bool _isAddingMarker = false;
 
   @override
   void initState() {
@@ -59,6 +67,10 @@ class _WeatherMapViewState extends State<WeatherMapView>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
+                'Weather Updates:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(
                 'Tap on any district marker to update its weather status.\n',
                 style: TextStyle(fontWeight: FontWeight.w500),
               ),
@@ -69,7 +81,16 @@ class _WeatherMapViewState extends State<WeatherMapView>
               Text('🌊 Flood - Flooding conditions'),
               SizedBox(height: 16),
               Text(
-                'Your updates are visible to all users in realtime!',
+                'Add Your Own Markers:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(
+                'Enable marker mode and tap anywhere on the map to add notes, photos, warnings, events, or places. All users can see your markers!\n',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Updates are visible to all users in realtime!',
                 style: TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
@@ -81,6 +102,115 @@ class _WeatherMapViewState extends State<WeatherMapView>
             child: const Text('Got it'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _handleMapTap(LatLng position) {
+    if (_isAddingMarker) {
+      showDialog(
+        context: context,
+        builder: (context) => AddMarkerDialog(
+          position: position,
+          onAdd: (marker) async {
+            try {
+              await _markerRepository.addMarker(marker);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Marker added successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to add marker: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+        ),
+      );
+    } else {
+      _controller.handleTapForDoubleClick(position);
+    }
+  }
+
+  void _showMarkerDetails(UserMarker marker) {
+    showDialog(
+      context: context,
+      builder: (context) => MarkerDetailDialog(
+        marker: marker,
+        onDelete: () async {
+          try {
+            await _markerRepository.deleteMarker(marker.id);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Marker deleted successfully!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to delete marker: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+        onUpdateWeather: (status, updatedBy) async {
+          try {
+            await _markerRepository.updateWeatherStatus(
+              marker.id,
+              statusToString(status),
+              updatedBy,
+            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Weather status updated!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to update weather: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  void _toggleAddMarkerMode() {
+    setState(() {
+      _isAddingMarker = !_isAddingMarker;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _isAddingMarker
+              ? 'Tap anywhere on the map to add a marker'
+              : 'Marker mode disabled',
+        ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: _isAddingMarker ? Colors.green : Colors.grey,
       ),
     );
   }
@@ -108,9 +238,17 @@ class _WeatherMapViewState extends State<WeatherMapView>
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sri Lanka Weather'),
+        title: const Text('Serendip'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            icon: Icon(
+              _isAddingMarker ? Icons.add_location : Icons.add_location_alt_outlined,
+              color: _isAddingMarker ? Colors.green : null,
+            ),
+            onPressed: _toggleAddMarkerMode,
+            tooltip: _isAddingMarker ? 'Disable Marker Mode' : 'Add Marker',
+          ),
           IconButton(
             icon: Icon(
               Theme.of(context).brightness == Brightness.dark
@@ -205,8 +343,7 @@ class _WeatherMapViewState extends State<WeatherMapView>
                       maxZoom: 18.0,
                       keepAlive: true,
                       onTap: (tapPosition, point) {
-                        // Double-tap to zoom in
-                        _controller.handleTapForDoubleClick(point);
+                        _handleMapTap(point);
                       },
                       onMapEvent: (event) {
                         if (event is MapEventMoveStart ||
@@ -246,6 +383,28 @@ class _WeatherMapViewState extends State<WeatherMapView>
                       MarkerLayer(
                         markers: _buildMarkers(regions),
                         rotate: false,
+                      ),
+                      StreamBuilder<List<UserMarker>>(
+                        stream: _markerRepository.watchUserMarkers(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox.shrink();
+                          final userMarkers = snapshot.data!;
+                          return MarkerLayer(
+                            markers: userMarkers.map((marker) {
+                              return Marker(
+                                key: ValueKey(marker.id),
+                                point: marker.position,
+                                width: 110,
+                                height: 110,
+                                child: UserMarkerWidget(
+                                  marker: marker,
+                                  onTap: () => _showMarkerDetails(marker),
+                                ),
+                              );
+                            }).toList(),
+                            rotate: false,
+                          );
+                        },
                       ),
                     ],
                   ),
