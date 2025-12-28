@@ -236,29 +236,81 @@ class _WeatherMapViewState extends State<WeatherMapView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Serendip'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isAddingMarker ? Icons.add_location : Icons.add_location_alt_outlined,
-              color: _isAddingMarker ? Colors.green : null,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade400, Colors.teal.shade400],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.location_on, color: Colors.white, size: 20),
             ),
-            onPressed: _toggleAddMarkerMode,
-            tooltip: _isAddingMarker ? 'Disable Marker Mode' : 'Add Marker',
+            const SizedBox(width: 12),
+            const Text(
+              'Serendip',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [Colors.grey.shade900, Colors.grey.shade800]
+                  : [Colors.blue.shade50, Colors.teal.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            decoration: BoxDecoration(
+              color: _isAddingMarker
+                  ? Colors.green.withOpacity(0.2)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: _isAddingMarker
+                  ? Border.all(color: Colors.green, width: 2)
+                  : null,
+            ),
+            child: IconButton(
+              icon: Icon(
+                _isAddingMarker ? Icons.add_location : Icons.add_location_alt_outlined,
+                color: _isAddingMarker ? Colors.green : null,
+              ),
+              onPressed: _toggleAddMarkerMode,
+              tooltip: _isAddingMarker ? 'Disable Marker Mode' : 'Add Marker',
+            ),
           ),
           IconButton(
             icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
+              isDark ? Icons.light_mode : Icons.dark_mode,
             ),
             onPressed: widget.onToggleTheme,
-            tooltip: Theme.of(context).brightness == Brightness.dark
-                ? 'Light Mode'
-                : 'Dark Mode',
+            tooltip: isDark ? 'Light Mode' : 'Dark Mode',
           ),
           ListenableBuilder(
             listenable: _controller,
@@ -275,12 +327,14 @@ class _WeatherMapViewState extends State<WeatherMapView>
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showInfoDialog,
+            tooltip: 'Help',
           ),
           IconButton(
             icon: const Icon(Icons.my_location),
             onPressed: _controller.resetMapView,
             tooltip: 'Reset View',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: StreamBuilder<List<Region>>(
