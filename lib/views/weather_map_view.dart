@@ -417,8 +417,10 @@ class _WeatherMapViewState extends State<WeatherMapView>
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate: isDark
+                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                            : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        subdomains: isDark ? const ['a', 'b', 'c', 'd'] : const [],
                         userAgentPackageName: 'com.srilanka.sri_lanka_app',
                         maxZoom: 19,
                         maxNativeZoom: 19,

@@ -79,13 +79,13 @@ class UserMarkerWidget extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 90),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(6),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x26000000),
+                  color: Theme.of(context).shadowColor.withOpacity(0.15),
                   blurRadius: 4,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -94,10 +94,10 @@ class UserMarkerWidget extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),

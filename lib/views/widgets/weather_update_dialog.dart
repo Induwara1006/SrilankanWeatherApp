@@ -137,7 +137,9 @@ class WeatherUpdateDialog extends StatelessWidget {
       },
       selectedColor: color,
       checkmarkColor: Colors.white,
-      labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 }
